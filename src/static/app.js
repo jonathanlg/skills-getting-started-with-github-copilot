@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const spotsLeft = details.max_participants - details.participants.length;
 
         const participantsList = details.participants.length > 0
-          ? `<ul>${details.participants.map(p => `<li>${p}</li>`).join("")}</ul>`
+          ? `<ul style="list-style-type: none; padding: 0;">${details.participants.map(p => `<li>${p} <button class='delete-btn' data-participant='${p}'>🗑️</button></li>`).join("")}</ul>`
           : "<p><em>No participants yet</em></p>";
 
         activityCard.innerHTML = `
@@ -70,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // Refresh the activities list
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -91,4 +92,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+
+// Add event listener for delete buttons
+activitiesList.addEventListener('click', (event) => {
+  if (event.target.classList.contains('delete-btn')) {
+    const participant = event.target.getAttribute('data-participant');
+    const activityName = event.target.closest('.activity-card').querySelector('h4').textContent;
+
+    // Call API to unregister participant
+    fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(participant)}`, {
+      method: 'DELETE',
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (response.ok) {
+        // Remove participant from the DOM
+        event.target.closest('li').remove();
+      } else {
+        console.error('Error unregistering participant:', result);
+      }
+    })
+    .catch(error => console.error('Error:', error));
+  }
+});
 });
